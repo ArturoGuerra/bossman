@@ -20,7 +20,7 @@ async def join_channel(message):
       channel =  message.author.voice.channel
       if channel:
           voice = await channel.connect(reconnect=True)
-          source = discord.FFmpegPCMAudio("./Thats_a_piece_bread_bro.mp3")
+          source = discord.FFmpegPCMAudio("./media1.mp3")
           voice.play(source)
           while voice.is_playing():
               time.sleep(1)

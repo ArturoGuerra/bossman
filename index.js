@@ -19,8 +19,10 @@ async function vcplay(msg, file) {
   if (msg.member.voiceChannel) {
     try {
       vc = await msg.member.voiceChannel.join()
-      console.log(vc)
       const dispatcher = vc.playFile(file)
+      dispatcher.on("end", end => {
+        vc.disconnect()
+      })
     } catch (e) {
       console.error(e)
     }

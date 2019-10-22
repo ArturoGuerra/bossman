@@ -1,12 +1,9 @@
-FROM python:3-buster
+FROM node:8-buster
 
 WORKDIR /app
-RUN apt update && apt install -y ffmpeg libffi-dev
+RUN apt update && apt install -y ffmpeg libffi-dev libsodium-dev
 
-COPY Pipfile* /tmp/
-RUN pip install pipenv
-RUN cd /tmp && pipenv lock --requirements > requirements.txt
-RUN pip install -r /tmp/requirements.txt
 COPY . .
+RUN npm install
 
-CMD ["python", "./main.py"]
+CMD ["node", "./index.js"]

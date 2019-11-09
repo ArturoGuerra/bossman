@@ -7,6 +7,8 @@ import (
     "github.com/bwmarrin/discordgo"
     "fmt"
     "os"
+    "os/signal"
+    "syscall"
 )
 
 var token string
@@ -21,24 +23,27 @@ func init () {
 
 
 func main () {
-    dbot, err := discordgo.New("Bot " + token)
+    dgo, err := discordgo.New("Bot " + token)
 
     if err != nil {
         fmt.Println(err)
         return
     }
 
-    r, err := router.New(dbot)
+    cfg := config.New(token, "!")
 
-    if err != nil {
-        fmt.Println(err)
-        return
-    }
+    r := router.New(
+        dgo,
+        cfg,
+    )
 
-    dbot.addHandler(r.Handler)
-    dbot.addHandler(handlers.OnReady)
+    dgo.AddHandler(func (_ *discordgo.Session, m *discordgo.MessageCreate) {
+        r.Handler(m)
+    })
 
-    err = dbot.Open()
+    dgo.AddHandler(handlers.OnReady)
+
+    err = dgo.Open()
     if err != nil {
         fmt.Println(err)
         return
@@ -48,5 +53,5 @@ func main () {
     signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
     <- sc
 
-    dbot.Close()
+    dgo.Close()
 }

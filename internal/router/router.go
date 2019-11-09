@@ -3,31 +3,85 @@ package router
 import (
     "github.com/arturoguerra/bossman/internal/structs"
     "github.com/bwmarrin/discordgo"
+    "strings"
+    "errors"
+    "regexp"
 )
 
 
 type (
+    Context discordgo.MessageCreate
+
+    HandlerFunc func(interface{})
+
     Route struct {
-        Command string
-        Handler *interface{}
+        Name string
+        Handler HandlerFunc
     }
 
     Router struct {
        Routes []*Route
        Session *discordgo.Session
        Prefix string
-
-
     }
+)
+
+var ErrRouteAlreadyRegistered = errors.New("Route has already been registered")
+
+// Route Methods
+func (rt *Route) Match(name string) bool {
+    if strings.ToLower(name) == strings.ToLower(rt.Name) {
+        return true
+    }
+
+    return false
 }
 
-
-func New(s *discordgo.Session, c *structs.MessageConfig) *Router {
+// Router Methods
+func New(s *discordgo.Session, c *structs.Config) *Router {
     return &Router{
         Session: s,
-        Prefix, c.Prefix,
+        Prefix: c.Prefix,
     }
 }
 
-func (rt *Router) Handler(_ *discordgo.Session, m *discordgo.MessageCreate) {
+func (r *Router) Handler(m *discordgo.MessageCreate) error {
+    restr := r.Prefix + `([\w\d]+).+`
+    re, err := regexp.Compile(restr)
+
+    if err != nil {
+        return err
+    }
+
+    name := re.FindStringSubmatch(m.Content)[1]
+
+    if rt := r.Find(name); rt != nil {
+        rt.Handler(m)
+    }
+
+    return nil
+}
+
+func (r *Router) Find(name string) *Route {
+    for _, rt := range r.Routes {
+        if rt.Match(name) {
+            return rt
+        }
+    }
+
+    return nil
+}
+
+func (r *Router) On(name string, handler HandlerFunc) error {
+    route := &Route{
+        Name: name,
+        Handler: handler,
+    }
+
+    if rt := r.Find(route.Name); rt != nil {
+        return ErrRouteAlreadyRegistered
+    }
+
+    r.Routes = append(r.Routes, route)
+    return nil
 }

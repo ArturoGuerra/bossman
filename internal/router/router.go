@@ -10,7 +10,12 @@ import (
 
 
 type (
-    Context discordgo.MessageCreate
+    Context struct {
+        *discordgo.Message
+        Channel *discordgo.Channel
+        Guild *discordgo.Guild
+        Session *discordgo.Session
+    }
 
     HandlerFunc func(interface{})
 
@@ -41,11 +46,26 @@ func (rt *Route) Match(name string) bool {
 func New(s *discordgo.Session, c *structs.Config) *Router {
     return &Router{
         Session: s,
+        State: s.State,
         Prefix: c.Prefix,
     }
 }
 
 func (r *Router) Handler(m *discordgo.MessageCreate) error {
+    if r.State.User.ID == m.Author.ID {
+        return
+    }
+
+    c, err := r.State.Channel(m.ChannelID)
+    if err != nil {
+        return
+    }
+
+    g, err := r.State.Guild(c.GuildID)
+    if err != nil {
+        return
+    }
+
     restr := r.Prefix + `([\w\d]+).+`
     re, err := regexp.Compile(restr)
 
@@ -56,7 +76,14 @@ func (r *Router) Handler(m *discordgo.MessageCreate) error {
     name := re.FindStringSubmatch(m.Content)[1]
 
     if rt := r.Find(name); rt != nil {
-        rt.Handler(m)
+        ctx := &Context{
+            m,
+            c,
+            g,
+            r.Session,
+        }
+
+        rt.Handler(ctx)
     }
 
     return nil

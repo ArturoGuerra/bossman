@@ -2,6 +2,7 @@ package main
 
 import (
     "github.com/arturoguerra/bossman/internal/router"
+    "github.com/arturoguerra/bossman/internal/test"
     "github.com/arturoguerra/bossman/internal/handlers"
     "github.com/arturoguerra/bossman/internal/config"
     "github.com/bwmarrin/discordgo"
@@ -13,16 +14,17 @@ import (
 
 var token string
 
-func init () {
+func init() {
     token = os.Getenv("TOKEN")
 
     if token == "" {
+        fmt.Println("Missing token")
         os.Exit(3)
     }
 }
 
 
-func main () {
+func main() {
     dgo, err := discordgo.New("Bot " + token)
 
     if err != nil {
@@ -37,7 +39,10 @@ func main () {
         cfg,
     )
 
+    test.New(r)
+
     dgo.AddHandler(func (_ *discordgo.Session, m *discordgo.MessageCreate) {
+        fmt.Println("Running stuff")
         r.Handler(m)
     })
 

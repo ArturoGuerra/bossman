@@ -6,6 +6,7 @@ import (
     "strings"
     "errors"
     "regexp"
+    "fmt"
 )
 
 
@@ -17,7 +18,7 @@ type (
         Session *discordgo.Session
     }
 
-    HandlerFunc func(interface{})
+    HandlerFunc func(ctx *Context)
 
     Route struct {
         Name string
@@ -46,27 +47,27 @@ func (rt *Route) Match(name string) bool {
 func New(s *discordgo.Session, c *structs.Config) *Router {
     return &Router{
         Session: s,
-        State: s.State,
         Prefix: c.Prefix,
     }
 }
 
 func (r *Router) Handler(m *discordgo.MessageCreate) error {
-    if r.State.User.ID == m.Author.ID {
-        return
+    if r.Session.State.User.ID == m.Author.ID {
+        return nil
     }
 
-    c, err := r.State.Channel(m.ChannelID)
+    c, err := r.Session.State.Channel(m.ChannelID)
     if err != nil {
-        return
+        return nil
     }
 
-    g, err := r.State.Guild(c.GuildID)
+    g, err := r.Session.State.Guild(c.GuildID)
     if err != nil {
-        return
+        return nil
     }
 
-    restr := r.Prefix + `([\w\d]+).+`
+
+    restr := `\` + r.Prefix + `([\w\d]+).*`
     re, err := regexp.Compile(restr)
 
     if err != nil {
@@ -76,8 +77,9 @@ func (r *Router) Handler(m *discordgo.MessageCreate) error {
     name := re.FindStringSubmatch(m.Content)[1]
 
     if rt := r.Find(name); rt != nil {
+        fmt.Println("Name was found")
         ctx := &Context{
-            m,
+            m.Message,
             c,
             g,
             r.Session,

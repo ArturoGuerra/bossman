@@ -12,6 +12,8 @@ client.on("message", message => {
     vcplay(message, './media1.mp3')
   } else if (message.content == '-musklex') {
     vcplay(message, './media2.mp3')
+  } else if (message.content == '-red') {
+    vcplay(message, './media3.mp3')
   }
 });
 

@@ -16,6 +16,8 @@ client.on("message", message => {
     vcplay(message, './media3.mp3')
   } else if (message.content == '-retard') {
     vcplay(message, './media4.mp3')
+  } else if (message.content == '-imunderthewater') {
+    vcplay(message, './media5.mp3')
   }
 });
 
